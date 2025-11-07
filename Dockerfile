@@ -8,6 +8,7 @@ ENV CCACHE_DIR=/workspace/.ccache
 ENV CCACHE_MAXSIZE=5G
 ENV CCACHE_COMPRESS=1
 ENV CCACHE_COMPRESSLEVEL=6
+ENV PATH=/usr/local/bin:$PATH
 
 # Create ccache directory
 RUN mkdir -p $CCACHE_DIR
@@ -21,6 +22,15 @@ RUN git clone https://github.com/gem5/gem5
 # Change to gem5 directory
 WORKDIR /workspace/gem5
 
-# Build gem5 with ALL configuration using parallel jobs and ccache acceleration
+# Check available compilers and ccache setup
+RUN which gcc && which g++ && which ccache && ccache --version
+
+# Configure ccache symlinks for automatic usage
+RUN ln -sf /usr/bin/ccache /usr/local/bin/gcc && \
+    ln -sf /usr/bin/ccache /usr/local/bin/g++ && \
+    ln -sf /usr/bin/ccache /usr/local/bin/cc && \
+    ln -sf /usr/bin/ccache /usr/local/bin/c++
+
+# Build gem5 with ALL configuration using parallel jobs
 # Using nproc to determine number of CPU cores for parallel build
-RUN CC="ccache gcc" CXX="ccache g++" scons build/ALL/gem5.opt -j $(nproc)
+RUN scons build/ALL/gem5.opt -j $(nproc)
